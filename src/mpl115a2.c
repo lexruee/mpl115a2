@@ -31,19 +31,50 @@
 #include <math.h>
 #endif
 
+
+/**
+ * Creates a MPL115A2 sensor object.
+ *
+ * @param i2c device address
+ * @param i2c device file path
+ * @return mpl115a2 sensor
+ */
 void *mpl115a2_init(int address, const char* i2c_device_filepath) {
 	//TODO
 	return NULL;
 }
 
+
+
+/**
+ * Closes a MPL115A2 object.
+ * 
+ * @param mpl115a2 sensor
+ */
 void mpl115a2_close(void *_mpl) {
 	//TODO
 }
 
+
+
+/**
+ * Returns the measured pressure in pascal.
+ * 
+ * @param mpl115a2 sensor
+ * @return pressure
+ */
 long mpl115a2_pressure(void *_mpl) {
 	return 0; //TODO
 }
 
+
+
+/**
+ * Returns the measured temperature in celsius.
+ * 
+ * @param mpl115a2 sensor
+ * @return temperature
+ */
 float mpl115a2_temperature(void *_mpl) {
 	return 0; //TODO
 }
