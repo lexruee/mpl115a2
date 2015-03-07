@@ -33,26 +33,23 @@ typedef struct {
 	char *i2c_device;
 	
 	/* coefficients */
-	uint8_t a0_msb;
-	uint8_t a0_lsb;
-	uint8_t b1_msb;
-	uint8_t b1_lsb;
-	uint8_t b2_msb;
-	uint8_t b2_lsb;
-	uint8_t c12_msb;
-	uint8_t c12_lsb;
-	
-	
+	int16_t a1;
+	int16_t b1;
+	int16_t b2;
+	int16_t c12;
+		
 } mpl115a2_t;
 
-#define MPL115A2_REG_PRESSURE_MSB 0x00
-#define MPL115A2_REG_TEMPERATURE_MSB 0x02
+#define MPL115A2_REG_PRESSURE_MSB	 0x00
+#define MPL115A2_REG_TEMPERATURE_MSB	 0x02
 
-
-#define MPL115A2_REG_A0_MSB 0x04
-#define MPL115A2_REG_B1_MSB 0x06
-#define MPL115A2_REG_B2_MSB 0x08
-#define MPL115A2_REG_C12_MSB 0x0A
+/*
+ * Coefficients
+ */
+#define MPL115A2_REG_A0_MSB		 0x04
+#define MPL115A2_REG_B1_MSB		 0x06
+#define MPL115A2_REG_B2_MSB		 0x08
+#define MPL115A2_REG_C12_MSB		 0x0A
 
 
 #define TO_S(x)	(mpl115a2_t*) x
@@ -65,7 +62,49 @@ typedef struct {
 #endif
 
 
+/*
+ * Helper function prototypes.
+ */
 
+void mpl115a2_read_coeff(void *_s) {
+	mpl115a2_t *s = TO_S(_s);
+	// read all bytes using the read byte protocol
+	// otherwise we need to handle little endian to big endian conversion
+	uint8_t a0_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_A0_MSB);
+	uint8_t a0_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_A0_MSB+1);
+	
+	uint8_t b1_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_B1_MSB);
+	uint8_t b1_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_B1_MSB+1);
+	
+	uint8_t b2_msb = (uint8_t) i2c_smbus_read_word_data(s->file, MPL115A2_REG_B2_MSB);
+	uint8_t b2_lsb = (uint8_t) i2c_smbus_read_word_data(s->file, MPL115A2_REG_B2_MSB+1);
+		
+	uint8_t c12 = i2c_smbus_read_word_data(s->file, MPL115A2_REG_C12_MSB);		
+	
+	printf("a0_msb: %#x, a0_lsb: %#x\n ", a0_msb, a0_lsb);
+	printf("b1_msb: %#x, b1_lsb: %#x\n ", b1_msb, b1_lsb);
+	printf("b2_msb: %#x, b2_lsb: %#x\n ", b2_msb, b2_lsb);
+
+}
+
+
+/*
+ * Sets the address for the i2c device file.
+ */
+int mpl115a2_set_addr(void *_s) {
+	mpl115a2_t* s = TO_S(_s);
+	int error;
+
+	if((error = ioctl(s->file, I2C_SLAVE, s->address)) < 0)
+		DEBUG("error: ioctl() failed\n");
+
+	return error;
+}
+
+
+/*
+ * Implementation of the interface functions.
+ */
 
 /**
  * Creates a MPL115A2 sensor object.
@@ -102,6 +141,9 @@ void *mpl115a2_init(int address, const char* i2c_device_filepath) {
 		return NULL;
 	}
 	s->file = file;
+	if(mpl115a2_set_addr(s) < 0)
+		return NULL;
+	mpl115a2_read_coeff(s);
 
 	DEBUG("device: open ok\n");
 	return _s;
