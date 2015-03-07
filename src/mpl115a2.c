@@ -32,7 +32,27 @@ typedef struct {
 	/* i2c device file path */
 	char *i2c_device;
 	
+	/* coefficients */
+	uint8_t a0_msb;
+	uint8_t a0_lsb;
+	uint8_t b1_msb;
+	uint8_t b1_lsb;
+	uint8_t b2_msb;
+	uint8_t b2_lsb;
+	uint8_t c12_msb;
+	uint8_t c12_lsb;
+	
+	
 } mpl115a2_t;
+
+#define MPL115A2_REG_PRESSURE_MSB 0x00
+#define MPL115A2_REG_TEMPERATURE_MSB 0x02
+
+
+#define MPL115A2_REG_A0_MSB 0x04
+#define MPL115A2_REG_B1_MSB 0x06
+#define MPL115A2_REG_B2_MSB 0x08
+#define MPL115A2_REG_C12_MSB 0x0A
 
 
 #define TO_S(x)	(mpl115a2_t*) x
