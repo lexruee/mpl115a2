@@ -33,7 +33,7 @@ typedef struct {
 	char *i2c_device;
 	
 	/* coefficients */
-	int16_t a1;
+	int16_t a0;
 	int16_t b1;
 	int16_t b2;
 	int16_t c12;
@@ -68,23 +68,34 @@ typedef struct {
 
 void mpl115a2_read_coeff(void *_s) {
 	mpl115a2_t *s = TO_S(_s);
-	// read all bytes using the read byte protocol
-	// otherwise we need to handle little endian to big endian conversion
+
 	uint8_t a0_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_A0_MSB);
-	uint8_t a0_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_A0_MSB+1);
+	uint8_t a0_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_A0_MSB + 1);
 	
 	uint8_t b1_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_B1_MSB);
-	uint8_t b1_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_B1_MSB+1);
+	uint8_t b1_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_B1_MSB + 1);
 	
 	uint8_t b2_msb = (uint8_t) i2c_smbus_read_word_data(s->file, MPL115A2_REG_B2_MSB);
-	uint8_t b2_lsb = (uint8_t) i2c_smbus_read_word_data(s->file, MPL115A2_REG_B2_MSB+1);
+	uint8_t b2_lsb = (uint8_t) i2c_smbus_read_word_data(s->file, MPL115A2_REG_B2_MSB + 1);
 		
-	uint8_t c12 = i2c_smbus_read_word_data(s->file, MPL115A2_REG_C12_MSB);		
+	uint8_t c12_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_C12_MSB);		
+	uint8_t c12_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_C12_MSB + 1);
+
+	s->a0 = (a0_msb<<8) + a0_lsb;
+	s->b1 = (b1_msb<<8) + b1_lsb;
+	s->b2 = (b2_msb<<8) + b2_lsb;
+	s->c12 = (c12_msb<<6) + (c12_lsb>>2);
+	
 	
 	printf("a0_msb: %#x, a0_lsb: %#x\n ", a0_msb, a0_lsb);
 	printf("b1_msb: %#x, b1_lsb: %#x\n ", b1_msb, b1_lsb);
 	printf("b2_msb: %#x, b2_lsb: %#x\n ", b2_msb, b2_lsb);
+	printf("c12_msb: %#x,c12_lsb: %#x\n ", c12_msb, c12_lsb);
 
+	printf("a1: %i\n ", s->a0);
+	printf("b1: %i\n ", s->b1);
+	printf("b2: %i\n ", s->b2);
+	printf("c12: %i\n ", s->c12);
 }
 
 
