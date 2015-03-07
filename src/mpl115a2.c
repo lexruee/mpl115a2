@@ -6,15 +6,6 @@
  *  
  */
 
-/*
- * @author 	Alexander Rüedlinger <a.rueedlinger@gmail.com>
- * @date 	07.03.2015
- *
- * A C driver for the sensor MPL115A2.
- *  
- */
-
-
 #ifndef __MPL115A2__
 #define __MPL115A2__
 #include <stdint.h>
