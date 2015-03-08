@@ -270,7 +270,7 @@ void mpl115a2_read_data(void *_s, float *temperature, float *pressure) {
  * @param mpl115a2 sensor
  * @return pressure
  */
-long mpl115a2_pressure(void *_s) {
+float mpl115a2_pressure(void *_s) {
 	float t, p;
 	mpl115a2_read_data(_s, &t, &p);
 	return p;
