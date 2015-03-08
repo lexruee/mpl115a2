@@ -33,28 +33,37 @@ typedef struct {
 	char *i2c_device;
 	
 	/* coefficients */
-	int16_t a0;
-	int16_t b1;
-	int16_t b2;
-	int16_t c12;
+	float a0;
+	float b1;
+	float b2;
+	float c12;
 		
 } mpl115a2_t;
 
-#define MPL115A2_REG_PRESSURE_MSB	 0x00
-#define MPL115A2_REG_TEMPERATURE_MSB	 0x02
+/*
+ * Registers
+ */
+#define MPL115A2_REG_PRESSURE_MSB	 	0x00
+#define MPL115A2_REG_TEMPERATURE_MSB	0x02
+
+/*
+ * Commands
+ */
+#define MPL115A2_CMD_CONVERSION			0x12
+
 
 /*
  * Coefficients
  */
-#define MPL115A2_REG_A0_MSB		 0x04
-#define MPL115A2_REG_B1_MSB		 0x06
-#define MPL115A2_REG_B2_MSB		 0x08
-#define MPL115A2_REG_C12_MSB		 0x0A
+#define MPL115A2_REG_A0_MSB		 		0x04
+#define MPL115A2_REG_B1_MSB		 		0x06
+#define MPL115A2_REG_B2_MSB		 		0x08
+#define MPL115A2_REG_C12_MSB			0x0A
 
 
 #define TO_S(x)	(mpl115a2_t*) x
 
-#define __MPL115A2__DEBUG__
+//#define __MPL115A2__DEBUG__
 #ifdef __MPL115A2__DEBUG__				
 #define DEBUG(...)	printf(__VA_ARGS__)
 #else
@@ -63,9 +72,23 @@ typedef struct {
 
 
 /*
- * Helper function prototypes.
+ * Prototypes for helper functions
  */
 
+void mpl115a2_read_coeff(void *_s);
+int mpl115a2_set_addr(void *_s);
+ 
+
+/*
+ * Implemetation of the helper functions
+ */
+ 
+
+/*
+ * Reads the calibration coefficients from the MPL115A2 sensor.
+ * 
+ * @param mpl115a2 sensor
+ */
 void mpl115a2_read_coeff(void *_s) {
 	mpl115a2_t *s = TO_S(_s);
 
@@ -81,26 +104,39 @@ void mpl115a2_read_coeff(void *_s) {
 	uint8_t c12_msb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_C12_MSB);		
 	uint8_t c12_lsb = (uint8_t) i2c_smbus_read_byte_data(s->file, MPL115A2_REG_C12_MSB + 1);
 
-	s->a0 = (a0_msb<<8) + a0_lsb;
-	s->b1 = (b1_msb<<8) + b1_lsb;
-	s->b2 = (b2_msb<<8) + b2_lsb;
-	s->c12 = (c12_msb<<6) + (c12_lsb>>2);
+	// signs of the coeffs. are correct because we use int16_t ints.
+	int16_t a0, b1, b2, c12;
+	
+	// convert to integers
+	a0 = (a0_msb<<8) + a0_lsb;
+	b1 = (b1_msb<<8) + b1_lsb;
+	b2 = (b2_msb<<8) + b2_lsb;
+	c12 = (c12_msb<<8) + c12_lsb;
 	
 	
-	printf("a0_msb: %#x, a0_lsb: %#x\n ", a0_msb, a0_lsb);
-	printf("b1_msb: %#x, b1_lsb: %#x\n ", b1_msb, b1_lsb);
-	printf("b2_msb: %#x, b2_lsb: %#x\n ", b2_msb, b2_lsb);
-	printf("c12_msb: %#x,c12_lsb: %#x\n ", c12_msb, c12_lsb);
+	// convert integers to floats and store them
+	s->a0 = a0 / 8.0f; 			// 2^-3
+	s->b1 = b1/ 8192.0f; 		// 2^-13
+	s->b2 = b2 / 16384.0f; 		// 2^-14
+	s->c12 = c12 / 16777216.0f; // 2^-24
+	
+	DEBUG("c12: %#x, c12{1:0} %#x\n", c12_lsb, c12_lsb & 0x03);
+	DEBUG("a0_msb: %#x, a0_lsb: %#x\n ", a0_msb, a0_lsb);
+	DEBUG("b1_msb: %#x, b1_lsb: %#x\n ", b1_msb, b1_lsb);
+	DEBUG("b2_msb: %#x, b2_lsb: %#x\n ", b2_msb, b2_lsb);
+	DEBUG("c12_msb: %#x,c12_lsb: %#x\n ", c12_msb, c12_lsb);
 
-	printf("a1: %i\n ", s->a0);
-	printf("b1: %i\n ", s->b1);
-	printf("b2: %i\n ", s->b2);
-	printf("c12: %i\n ", s->c12);
+	DEBUG("a1: %f\n ", s->a0);
+	DEBUG("b1: %f\n ", s->b1);
+	DEBUG("b2: %f\n ", s->b2);
+	DEBUG("c12: %f\n ", s->c12);
 }
 
 
 /*
  * Sets the address for the i2c device file.
+ * 
+ * @param mpl115a2 sensor
  */
 int mpl115a2_set_addr(void *_s) {
 	mpl115a2_t* s = TO_S(_s);
@@ -113,9 +149,11 @@ int mpl115a2_set_addr(void *_s) {
 }
 
 
+
 /*
  * Implementation of the interface functions.
  */
+ 
 
 /**
  * Creates a MPL115A2 sensor object.
@@ -183,13 +221,59 @@ void mpl115a2_close(void *_s) {
 
 
 /**
+ * Read temperature and humidity value from the MPL115A2 sensor.
+ * 
+ * @param mpl115a2 sensor
+ * @param temperature
+ * @param pressure
+ */
+void mpl115a2_read_data(void *_s, float *temperature, float *pressure) {
+	mpl115a2_t *s = TO_S(_s);
+	
+	if(i2c_smbus_write_byte_data(s->file, MPL115A2_CMD_CONVERSION, 0x00) < 0) {
+		DEBUG("error: i2c_smbus_write_byte\n");
+	}
+
+	usleep(5 * 1000); // 5 ms
+		
+	uint8_t pressure_msb, pressure_lsb, temperature_msb, temperature_lsb;
+	
+	uint16_t temperature_word = i2c_smbus_read_word_data(s->file, MPL115A2_REG_TEMPERATURE_MSB);
+	uint16_t pressure_word = i2c_smbus_read_word_data(s->file, MPL115A2_REG_PRESSURE_MSB);
+	
+	// note: arm uses big endian, but i2c_smbus_x functions assume little endian.
+	// word  = 0,1,2,3,4,5,6,7, 8,9,10,11,12,13,14,15
+	//        [     lsb       ][         msb         ]
+	temperature_msb = (temperature_word & 0x00FF); // extract msb byte
+	temperature_lsb = (temperature_word & 0xFF00) >> 8;
+	
+	pressure_msb = (pressure_word & 0x00FF); // extract lsb byte
+	pressure_lsb = (pressure_word & 0xFF00) >> 8;
+	
+	uint16_t raw_temperature = ((temperature_msb << 8) + temperature_lsb) >> 6;
+	uint16_t raw_pressure = ((pressure_msb << 8) + pressure_lsb) >> 6;
+	
+	float pressure_comp = s->a0 + (s->b1 + s->c12 * raw_temperature) * raw_pressure + s->b2 * raw_temperature;
+	
+	*temperature = ((float) raw_temperature - 498.0f) / -5.35f + 25.0f;
+	*pressure =  ((pressure_comp / 15.737f) + 50.0f)*1000;
+	
+	DEBUG("tmp: %f ,tmp_msb: %#x, tmp_lsb: %#x\n ", *temperature, temperature_msb, temperature_lsb);
+	DEBUG("pre: %f ,pre_msb: %#x, pre_lsb: %#x, raw: %#x\n ", *pressure, pressure_msb, pressure_lsb, raw_pressure);
+}
+
+
+
+/**
  * Returns the measured pressure in pascal.
  * 
  * @param mpl115a2 sensor
  * @return pressure
  */
 long mpl115a2_pressure(void *_s) {
-	return 0; //TODO
+	float t, p;
+	mpl115a2_read_data(_s, &t, &p);
+	return p;
 }
 
 
@@ -201,8 +285,8 @@ long mpl115a2_pressure(void *_s) {
  * @return temperature
  */
 float mpl115a2_temperature(void *_s) {
-	return 0; //TODO
+	float t, p;
+	mpl115a2_read_data(_s, &t, &p);
+	return t;
 }
-
-
 
