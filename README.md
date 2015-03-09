@@ -1,6 +1,6 @@
 # MPL115A2
 
-Raspberry Pi C driver for the sensor MPL115A2.
+Raspberry Pi C driver and Python bindings for the sensor MPL115A2.
 
 
 ## Example Usage
