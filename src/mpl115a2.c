@@ -221,7 +221,7 @@ void mpl115a2_close(void *_s) {
 
 
 /**
- * Read temperature and humidity value from the MPL115A2 sensor.
+ * Read temperature and pressure value from the MPL115A2 sensor.
  * 
  * @param mpl115a2 sensor
  * @param temperature
