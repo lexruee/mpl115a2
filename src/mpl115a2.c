@@ -255,7 +255,9 @@ void mpl115a2_read_data(void *_s, float *temperature, float *pressure) {
 	
 	float pressure_comp = s->a0 + (s->b1 + s->c12 * raw_temperature) * raw_pressure + s->b2 * raw_temperature;
 	
-	*temperature = ((float) raw_temperature - 498.0f) / -5.35f + 25.0f;
+	// black magic temperature formula: http://forums.adafruit.com/viewtopic.php?f=25&t=34787
+	// thx @park
+	*temperature = ((float) raw_temperature) * -0.1707f + 112.27f;
 	*pressure =  ((pressure_comp / 15.737f) + 50.0f)*1000;
 	
 	DEBUG("tmp: %f ,tmp_msb: %#x, tmp_lsb: %#x\n ", *temperature, temperature_msb, temperature_lsb);
