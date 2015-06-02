@@ -1,11 +1,11 @@
 /*
  * @author 	Alexander Rüedlinger <a.rueedlinger@gmail.com>
  * @date 	9.03.2015
- * 
+ *
  * Python bindings for the MPL115A2 driver written in C.
- * 
+ *
  */
- 
+
 #include <Python.h>
 #include <structmember.h>
 #include "mpl115a2.h"
@@ -37,12 +37,17 @@ static int MPL115A2_init(MPL115A2_Object *self, PyObject *args, PyObject *kwds) 
 	int address;
 	const char *i2c_device;
 	static char *kwlist[] = {"address", "i2c_devcie", NULL};
-	
+
 	if(!PyArg_ParseTupleAndKeywords(args, kwds, "is", kwlist, &address, &i2c_device))
 		return -1;
-		
-	if(i2c_device) 
+
+	if(i2c_device) {
 		self->mpl115a2 = mpl115a2_init(address, i2c_device);
+    if(self->mpl115a2 == NULL) {
+			PyErr_SetString(PyExc_RuntimeError, "Cannot initialize sensor. Run program as root and check i2c device / address.");
+			return -1;
+		}
+  }
 
 	return 0;
 }
@@ -142,15 +147,15 @@ static PyMethodDef module_methods[] = {
 
 PyMODINIT_FUNC initMPL115A2(void) {
 	PyObject *m;
-	
+
 	if(PyType_Ready(&MPL115A2_Type) < 0)
 		return;
-		
+
 	m = Py_InitModule3("MPL115A2", module_methods, "MPL115A2 extension module");
-	
+
 	if(m == NULL)
 		return;
-		
+
 	Py_INCREF(&MPL115A2_Type);
 	PyModule_AddObject(m, "MPL115A2", (PyObject *)&MPL115A2_Type);
 }
