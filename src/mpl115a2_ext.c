@@ -98,7 +98,7 @@ static PyMemberDef MPL115A2_members[] = {
 static PyTypeObject MPL115A2_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,                         /*ob_size*/
-	"MPL115A2.MPL115A2",             /*tp_name*/
+	"tentacle_pi.MPL115A2",             /*tp_name*/
 	sizeof(MPL115A2_Object),             /*tp_basicsize*/
 	0,                         /*tp_itemsize*/
 	(destructor)MPL115A2_dealloc, /*tp_dealloc*/
