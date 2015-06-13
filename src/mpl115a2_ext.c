@@ -81,9 +81,9 @@ static PyObject *MPL115A2_sense(MPL115A2_Object *self) {
 
 
 static PyMethodDef MPL115A2_methods[] = {
-	{"temperature", (PyCFunction) MPL115A2_temperature, METH_NOARGS, "Return the temperature value"},
-	{"pressure", (PyCFunction) MPL115A2_pressure, METH_NOARGS, "Return the pressure value"},
-	{"sense", (PyCFunction) MPL115A2_sense, METH_NOARGS, "Return the (pressure, temperature) tuple"},
+	{"temperature", (PyCFunction) MPL115A2_temperature, METH_NOARGS, "Returns a temperature value"},
+	{"pressure", (PyCFunction) MPL115A2_pressure, METH_NOARGS, "Returns a pressure value"},
+	{"sense", (PyCFunction) MPL115A2_sense, METH_NOARGS, "Returns a (pressure, temperature) tuple"},
 	{NULL}  /* Sentinel */
 };
 
